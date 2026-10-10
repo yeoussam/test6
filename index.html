@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lesson 6 단원평가 챗봇</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f1f5f9;
+            word-break: keep-all;
+        }
+        .chat-bubble-bot::before {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 18px;
+            width: 0;
+            height: 0;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+            border-right: 10px solid #ffffff;
+        }
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4); }
+            50% { transform: scale(1.02); box-shadow: 0 15px 30px -5px rgba(59, 130, 246, 0.6); }
+        }
+        .animate-pulse-glow {
+            animation: pulseGlow 2.5s infinite ease-in-out;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+        .animate-shake {
+            animation: shake 0.4s ease-in-out;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col justify-between selection:bg-blue-200">
+
+    <!-- Top Navigation / Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-md">
+                    <i class="fa-solid font-bold text-lg fa-robot"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-slate-800 text-base md:text-lg leading-tight">Lesson 6 단원평가 챗봇</h1>
+                    <p class="text-xs text-slate-500">22개정 중학 영어1 (윤) - 25문항 풀이</p>
+                </div>
+            </div>
+            
+            <div id="headerControls" class="flex items-center space-x-2 hidden">
+                <button id="soundToggleBtn" onclick="toggleSound()" class="p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors" title="음향 효과 켜기/끄기">
+                    <i id="soundIcon" class="fa-solid fa-volume-high text-lg"></i>
+                </button>
+                <button onclick="confirmRestart()" class="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="처음부터 다시">
+                    <i class="fa-solid fa-rotate-right text-lg"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-4xl w-full mx-auto p-4 flex-1 flex flex-col">
+
+        <!-- 1. WELCOME SCREEN -->
+        <div id="welcomeScreen" class="my-auto py-8 flex flex-col items-center text-center">
+            <div class="relative mb-6">
+                <div class="w-28 h-28 md:w-36 md:h-36 rounded-full bg-blue-100 border-4 border-blue-500/20 flex items-center justify-center text-blue-600 shadow-xl relative overflow-hidden">
+                    <i class="fa-solid fa-robot text-5xl md:text-6xl text-blue-600 transform transition-transform hover:scale-110 duration-300"></i>
+                </div>
+                <span class="absolute bottom-1 right-1 bg-green-500 text-white text-xs px-2.5 py-0.5 rounded-full font-bold border-2 border-white flex items-center gap-1 shadow">
+                    <span class="w-2 h-2 rounded-full bg-white animate-ping"></span> 준비 완료
+                </span>
+            </div>
+
+            <div class="max-w-md bg-white p-6 rounded-2xl shadow-lg border border-slate-100 mb-8 relative">
+                <div class="inline-block bg-blue-50 text-blue-700 text-xs font-bold px-3 py-1 rounded-full mb-3">
+                    중학교 영어 1 - 윤정미 (Lesson 6)
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800 mb-3">
+                    6단원을 마무리하며 문제를 풀어보자! ✨
+                </h2>
+                <p class="text-slate-600 text-sm leading-relaxed mb-4">
+                    총 <strong class="text-blue-600">25개</strong>의 단원평가 문제가 준비되어 있어요.<br>
+                    문제는 한 페이지에 하나씩 출제되며, 틀려도 한 번 더 다시 생각할 기회를 드립니다!
+                </p>
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs text-slate-500 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-lightbulb text-amber-500 text-sm"></i>
+                    <span>챗봇 튜터가 친절하게 답과 해설을 안내해 줄 거예요.</span>
+                </div>
+            </div>
+
+            <button onclick="startQuiz()" class="animate-pulse-glow bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-lg px-8 py-4 rounded-xl shadow-lg transition-all duration-300 flex items-center gap-3">
+                <span>시작하기</span>
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+
+        <!-- 2. QUIZ SCREEN -->
+        <div id="quizScreen" class="hidden flex-1 flex flex-col gap-4">
+            
+            <!-- Progress Bar & Status -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-2">
+                <div class="flex items-center justify-between text-xs font-semibold text-slate-500">
+                    <span class="flex items-center gap-1 text-blue-600">
+                        <i class="fa-solid fa-list-check"></i>
+                        <span>문제 <strong id="currentQNum" class="text-base text-blue-700">1</strong> / 25</span>
+                    </span>
+                    <span id="scoreDisplay" class="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-bold">
+                        정답률: <span id="correctRate">0%</span>
+                    </span>
+                </div>
+                <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                    <div id="progressBar" class="bg-gradient-to-r from-blue-500 to-indigo-600 h-full w-0 transition-all duration-300 rounded-full"></div>
+                </div>
+            </div>
+
+            <!-- Chatbot Message / Tutor Bubble -->
+            <div class="bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-slate-200 flex items-start gap-3 relative">
+                <div class="w-12 h-12 rounded-2xl bg-blue-100 border border-blue-200 flex-shrink-0 flex items-center justify-center text-blue-600 text-xl shadow-sm">
+                    <i id="botIcon" class="fa-solid fa-robot"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="font-bold text-slate-800 text-sm">영어 챗봇 튜터 루시</span>
+                        <span id="attemptBadge" class="text-xs px-2 py-0.5 rounded-md font-semibold bg-blue-50 text-blue-600">첫 번째 시도</span>
+                    </div>
+                    <div id="botMessage" class="text-slate-700 text-sm md:text-base leading-relaxed">
+                        문제를 잘 읽고 정답을 선택해보세요!
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shared Passage Box -->
+            <div id="passageBox" class="hidden bg-amber-50/80 border border-amber-200 p-4 md:p-5 rounded-2xl shadow-sm">
+                <div class="flex items-center gap-2 mb-2 pb-2 border-b border-amber-200/60 text-amber-900 font-bold text-xs md:text-sm">
+                    <i class="fa-solid fa-book-open text-amber-600"></i>
+                    <span id="passageTitle">[공통 지문]</span>
+                </div>
+                <div id="passageContent" class="text-slate-800 text-sm md:text-base leading-relaxed whitespace-pre-line font-medium"></div>
+            </div>
+
+            <!-- Main Question Area -->
+            <div class="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-slate-200 flex-1 flex flex-col justify-between">
+                <div>
+                    <!-- Question Prompt -->
+                    <div class="mb-4">
+                        <h3 id="questionPrompt" class="text-base md:text-lg font-bold text-slate-800 leading-snug">
+                            1. 다음 빈칸에 들어갈 말로 알맞은 것은?
+                        </h3>
+                    </div>
+
+                    <!-- Question Extra Content -->
+                    <div id="questionExtra" class="hidden bg-slate-50 p-4 rounded-xl border border-slate-200 mb-5 text-slate-800 text-sm md:text-base whitespace-pre-line leading-relaxed font-medium"></div>
+
+                    <!-- Multiple Choice Options Box -->
+                    <div id="optionsContainer" class="space-y-2.5 mb-4">
+                        <!-- Options injected dynamically -->
+                    </div>
+
+                    <!-- Subjective Input Box -->
+                    <div id="subjectiveContainer" class="hidden space-y-3 mb-4">
+                        <div class="p-3 bg-blue-50 rounded-xl border border-blue-200 text-xs text-blue-800 font-medium flex items-center gap-2">
+                            <i class="fa-solid fa-pen-clip"></i>
+                            <span>대소문자를 신경 쓰지 않고 정확한 영문 단어나 문장을 입력하세요.</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span id="textPrefix" class="font-bold text-slate-700 text-sm md:text-base hidden"></span>
+                            <input type="text" id="subjectiveInput" placeholder="정답을 입력하세요..." 
+                                class="flex-1 p-3.5 border-2 border-slate-300 rounded-xl focus:border-blue-500 focus:outline-none text-slate-800 font-medium transition-colors text-sm md:text-base"
+                                onkeypress="handleSubjectiveKeyPress(event)" />
+                        </div>
+                        <button id="submitSubjectiveBtn" onclick="submitSubjectiveAnswer()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors shadow">
+                            정답 제출하기
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Explanation Box -->
+                <div id="explanationBox" class="hidden mt-4 p-4 rounded-xl bg-slate-100 border border-slate-300">
+                    <div class="flex items-center gap-2 text-slate-800 font-bold text-xs md:text-sm mb-1.5">
+                        <i class="fa-solid fa-circle-info text-blue-600"></i>
+                        <span>정답 및 해설</span>
+                    </div>
+                    <p id="correctAnswerText" class="text-blue-700 font-bold text-sm mb-1"></p>
+                    <p id="explanationText" class="text-slate-600 text-xs md:text-sm leading-relaxed"></p>
+                </div>
+
+                <!-- Navigation Controls -->
+                <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                    <button id="prevBtn" onclick="prevQuestion()" class="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 text-sm font-bold transition-colors disabled:opacity-30 disabled:pointer-events-none flex items-center gap-2">
+                        <i class="fa-solid fa-chevron-left"></i> 이전
+                    </button>
+                    <button id="nextBtn" onclick="nextQuestion()" class="hidden bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow transition-colors flex items-center gap-2">
+                        <span>다음 문제</span> <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. SUMMARY SCREEN -->
+        <div id="summaryScreen" class="hidden my-auto py-6 flex flex-col items-center">
+            <div class="w-full max-w-2xl bg-white p-6 md:p-8 rounded-3xl shadow-xl border border-slate-100">
+                <div class="text-center mb-6">
+                    <div class="inline-flex p-4 bg-emerald-100 text-emerald-600 rounded-full text-4xl mb-3 shadow-inner">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+                    <h2 class="text-2xl md:text-3xl font-extrabold text-slate-800 mb-1">
+                        6단원 단원평가 완료! 🎉
+                    </h2>
+                    <p class="text-slate-500 text-sm">25문제를 모두 해결했습니다. 수고하셨습니다!</p>
+                </div>
+
+                <!-- Score Dashboard Grid -->
+                <div class="grid grid-cols-3 gap-3 mb-6">
+                    <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-center">
+                        <div class="text-xs font-bold text-blue-600 mb-1">첫 번째 성공</div>
+                        <div id="scoreFirstTry" class="text-2xl md:text-3xl font-extrabold text-blue-800">0</div>
+                        <div class="text-[10px] text-blue-500 mt-0.5">25문제 중</div>
+                    </div>
+                    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center">
+                        <div class="text-xs font-bold text-amber-600 mb-1">재시도 정답</div>
+                        <div id="scoreSecondTry" class="text-2xl md:text-3xl font-extrabold text-amber-800">0</div>
+                        <div class="text-[10px] text-amber-500 mt-0.5">기회 활용</div>
+                    </div>
+                    <div class="bg-rose-50 border border-rose-200 rounded-2xl p-4 text-center">
+                        <div class="text-xs font-bold text-rose-600 mb-1">복습 필요</div>
+                        <div id="scoreIncorrect" class="text-2xl md:text-3xl font-extrabold text-rose-800">0</div>
+                        <div class="text-[10px] text-rose-500 mt-0.5">오답 오답</div>
+                    </div>
+                </div>
+
+                <!-- Review Section Title -->
+                <h3 class="font-bold text-slate-800 text-base mb-3 flex items-center justify-between">
+                    <span><i class="fa-solid fa-list-ol text-blue-600 mr-2"></i>문제별 학습 결과</span>
+                    <span class="text-xs font-normal text-slate-500">클릭하여 문제/해설 재확인 가능</span>
+                </h3>
+
+                <!-- Problem Review List -->
+                <div id="reviewList" class="space-y-2 max-h-64 overflow-y-auto custom-scrollbar pr-1 mb-6">
+                    <!-- Items populated dynamically -->
+                </div>
+
+                <!-- Actions -->
+                <div class="flex gap-3">
+                    <button onclick="restartQuiz()" class="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3.5 px-6 rounded-xl shadow transition-colors flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-arrow-rotate-left"></i>
+                        <span>다시 도전하기</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-100 border-t border-slate-200 py-3 text-center text-xs text-slate-400">
+        22개정 중학 영어1 (윤) Lesson 6 단원 평가 챗봇
+    </footer>
+
+    <!-- JavaScript Data & Logic -->
+    <script>
+        // Comprehensive Question Dataset matching all 25 PDF questions exactly.
+        const questions = [
+            {
+                id: 1,
+                type: 'choice',
+                prompt: '1. 다음 빈칸에 들어갈 말로 알맞은 것은?',
+                extra: 'Join the walking ______ and take a walk every day.',
+                options: ['① point', '② shower', '③ challenge', '④ waste', '⑤ leftover'],
+                answer: 3,
+                explanation: '\'걷기 챌린지에 동참하고 매일 걸으세요.\'라는 뜻이므로 빈칸에는 challenge가 알맞습니다.'
+            },
+            {
+                id: 2,
+                type: 'choice',
+                prompt: '2. 다음 빈칸에 공통으로 들어갈 말로 알맞은 것은?',
+                extra: '• The glass is half ______.\n• Please ______ the trash can.',
+                options: ['① buy', '② over', '③ late', '④ close', '⑤ empty'],
+                answer: 5,
+                explanation: '\'유리잔은 반이 비었다.\', \'휴지통을 비워 주세요.\'라는 뜻이므로 빈칸에 공통으로 알맞은 것은 empty입니다.'
+            },
+            {
+                id: 3,
+                type: 'choice',
+                passageTitle: '[3-4] 다음 대화를 읽고, 물음에 답하시오.',
+                passage: 'A: I always ______ cans and bottles.\nB: Oh! You try to reduce trash, right?\nA: Yes. I want to save the Earth.\nB: That\'s cool!',
+                prompt: '3. 위 대화의 빈칸에 들어갈 말로 알맞은 것은?',
+                options: ['① make', '② recycle', '③ produce', '④ buy', '⑤ use'],
+                answer: 2,
+                explanation: '문맥상 쓰레기를 줄인다는 말이 이어지므로 캔과 병을 \'재활용한다\'는 의미의 recycle이 알맞습니다.'
+            },
+            {
+                id: 4,
+                type: 'choice',
+                passageTitle: '[3-4] 다음 대화를 읽고, 물음에 답하시오.',
+                passage: 'A: I always ______ cans and bottles.\nB: Oh! You try to reduce trash, right?\nA: Yes. I want to save the Earth.\nB: That\'s cool!',
+                prompt: '4. 위 대화의 밑줄 친 trash와 바꿔 쓸 수 있는 것은?',
+                options: ['① idea', '② waste', '③ floor', '④ story', '⑤ container'],
+                answer: 2,
+                explanation: 'trash는 \'쓰레기\'라는 뜻으로 waste와 바꿔 쓸 수 있습니다.'
+            },
+            {
+                id: 5,
+                type: 'choice',
+                prompt: '5. 다음 대화의 밑줄 친 말에 담긴 의도로 알맞은 것은?',
+                extra: 'A: Can you please carry this box to my car?\nB: <u>I\'m really sorry, Dad, but I\'m late for my class.</u>\nA: Oh, I see. I\'ll ask somebody else.',
+                options: ['① 위로', '② 거절', '③ 동의', '④ 명령', '⑤ 충고'],
+                answer: 2,
+                explanation: '상자를 차로 옮겨 달라는 A의 요청에 미안하지만 수업에 늦었다고 거절(거절하기)하고 있습니다.'
+            },
+            {
+                id: 6,
+                type: 'choice',
+                passageTitle: '[6-7] 다음 대화를 읽고, 물음에 답하시오.',
+                passage: 'A: For here or to go?\nB: For here, please. And can you please put my smoothie in a plastic cup, not in a glass?\nA: I\'m sorry, but we don\'t use single-use plastic cups inside the café.\nB: Oh, I see.',
+                prompt: '6. 위 대화가 이루어지는 장소로 알맞은 것은?',
+                options: ['① 교실', '② 카페', '③ 병원', '④ 공장', '⑤ 마트'],
+                answer: 2,
+                explanation: '먹고 갈 스무디를 주문하고 일회용 플라스틱 컵 사용 불가에 대해 말하는 것으로 보아 카페 안에서의 대화입니다.'
+            },
+            {
+                id: 7,
+                type: 'text',
+                passageTitle: '[6-7] 다음 대화를 읽고, 물음에 답하시오.',
+                passage: 'A: For here or to go?\nB: For here, please. And can you please put my smoothie in a plastic cup, not in a glass?\nA: I\'m sorry, but we don\'t use single-use plastic cups inside the café.\nB: Oh, I see.',
+                prompt: '7. 스무디를 유리잔에 주는 이유를 다음과 같이 쓸 때, 빈칸에 들어갈 말을 위 대화에서 찾아 문장을 완성하시오.',
+                textPrefix: 'They don\'t ',
+                answer: 'use single-use plastic cups inside the café',
+                aliases: ['use single-use plastic cups inside the cafe', 'use single use plastic cups inside the café', 'use single use plastic cups inside the cafe'],
+                explanation: '카페 안에서는 일회용 플라스틱 컵을 사용할 수 없기 때문에 유리잔에 준다고 했습니다. (They don\'t use single-use plastic cups inside the café.)'
+            },
+            {
+                id: 8,
+                type: 'choice',
+                prompt: '8. 다음 대화 후에 이어질 B의 행동으로 알맞은 것은?',
+                extra: 'A: Look. Somebody forgot to turn off the water.\nB: Again? People are so forgetful.\nA: I know. Can you run over there and turn off the water?\nB: Sure. No problem.',
+                options: ['① 정원에 물 주기', '② 켜진 전등 끄기', '③ 뛰어가서 물 잠그기', '④ 친구의 가방 들어 주기', '⑤ 다른 사람에게 길 알려 주기'],
+                answer: 3,
+                explanation: 'A가 누군가가 물을 잠그는 것을 잊었다고 하면서 뛰어가서 물을 잠가 달라고 했고, B가 요청을 수락했습니다.'
+            },
+            {
+                id: 9,
+                type: 'text',
+                passageTitle: '[9-10] 다음 대화를 읽고, 물음에 답하시오.',
+                passage: 'A: Hi, Yuna. What are you doing here?\nB: Hi, Alex. I\'m plogging with my club members.\nA: Excuse me?\nB: Plogging. It means jogging and picking up ______ at the same time.\nA: Sounds cool! So you\'re a member of a plogging club.\nB: Yes. We plog together every Saturday morning from 10 to 12. Interested?\nA: Well, I\'ll think about it.\nB: OK. By the way, can you please help me with this trash bag? It\'s heavy.\nA: Sure. No problem.',
+                prompt: '9. 위 대화의 빈칸에 들어갈 말을 대화에서 찾아 한 단어로 쓰시오.',
+                answer: 'trash',
+                explanation: '문맥상 plogging은 조깅을 하면서 동시에 쓰레기를 줍는다는 뜻이므로 trash가 알맞습니다.'
+            },
+            {
+                id: 10,
+                type: 'choice',
+                passageTitle: '[9-10] 다음 대화를 읽고, 물음에 답하시오.',
+                passage: 'A: Hi, Yuna. What are you doing here?\nB: Hi, Alex. I\'m plogging with my club members.\nA: Excuse me?\nB: Plogging. It means jogging and picking up trash at the same time.\nA: Sounds cool! So you\'re a member of a plogging club.\nB: Yes. We plog together every Saturday morning from 10 to 12. Interested?\nA: Well, I\'ll think about it.\nB: OK. By the way, can you please help me with this trash bag? It\'s heavy.\nA: Sure. No problem.',
+                prompt: '10. 위 대화의 내용과 일치하지 않는 것은?',
+                options: [
+                    '① 유나는 동아리 회원들과 함께 있다.',
+                    '② Alex는 플로깅이라는 말을 못 알아들었다.',
+                    '③ 유나의 동아리는 토요일 아침마다 모인다.',
+                    '④ Alex는 유나의 동아리에 가입할 것이다.',
+                    '⑤ 유나는 무거운 쓰레기봉투를 들고 있다.'
+                ],
+                answer: 4,
+                explanation: 'Alex는 플로깅 동아리 가입에 대해 생각해 보겠다고(Well, I\'ll think about it) 했지 바로 가입할 것이라고 하지 않았습니다.'
+            },
+            {
+                id: 11,
+                type: 'choice',
+                prompt: '11. 다음 빈칸에 들어갈 수 없는 것은?',
+                extra: 'We ______ to watch the show.',
+                options: ['① enjoyed', '② planned', '③ hoped', '④ decided', '⑤ wanted'],
+                answer: 1,
+                explanation: 'enjoy는 동명사(-ing)를 목적어로 취하므로 to부정사 앞에 올 수 없습니다.'
+            },
+            {
+                id: 12,
+                type: 'choice',
+                prompt: '12. 다음 빈칸에 들어갈 말로 알맞은 것은?',
+                extra: 'Taeho wants ______.',
+                options: [
+                    '① to write books',
+                    '② be a soccer player',
+                    '③ cook for his family',
+                    '④ sang with his friend',
+                    '⑤ helping sick people'
+                ],
+                answer: 1,
+                explanation: 'want는 to부정사를 목적어로 씁니다.'
+            },
+            {
+                id: 13,
+                type: 'choice',
+                prompt: '13. 다음 괄호 안에서 알맞은 것을 골라 순서대로 바르게 짝지어진 것은?',
+                extra: '• I guess (this / that) it\'s all right.\n• What do you plan (do / to do / doing) this Sunday?',
+                options: ['① this - do', '② this - to do', '③ that - do', '④ that - to do', '⑤ that - doing'],
+                answer: 4,
+                explanation: '첫 번째 문장은 guess의 목적어절을 이끄는 접속사 that이 알맞고, 두 번째 문장은 plan이 to부정사를 목적어로 쓰므로 to do가 알맞습니다.'
+            },
+            {
+                id: 14,
+                type: 'choice',
+                prompt: '14. 다음 중 어법상 틀린 것은?',
+                options: [
+                    '① I decided to fix it.',
+                    '② I wanted to buy a bike.',
+                    '③ I hope to see you soon.',
+                    '④ They want eating pizza for dinner.',
+                    '⑤ Ted plans to go camping this weekend.'
+                ],
+                answer: 4,
+                explanation: 'want는 to부정사를 목적어로 쓰므로 eating을 to eat으로 고쳐야 합니다.'
+            },
+            {
+                id: 15,
+                type: 'choice',
+                prompt: '15. 다음 중 밑줄 친 부분의 쓰임이 나머지와 다른 것은?',
+                options: [
+                    '① I heard <u>that</u> he is a teacher.',
+                    '② I think <u>that</u> you are really fast.',
+                    '③ I believe <u>that</u> girl is from Canada.',
+                    '④ Jane doesn\'t think <u>that</u> math is difficult.',
+                    '⑤ Tom guesses <u>that</u> the movie is exciting.'
+                ],
+                answer: 3,
+                explanation: '①, ②, ④, ⑤의 that은 명사절을 이끄는 접속사이고, ③의 that은 girl을 수식하는 지시형용사(\'저\')입니다.'
+            },
+            {
+                id: 16,
+                type: 'text',
+                prompt: '16. 다음 우리말과 같은 뜻이 되도록 주어진 단어를 이용하여 문장을 완성하시오.\n\n우리는 이번 주말에 쇼핑하러 갈 계획이다. (go)',
+                textPrefix: 'We plan ',
+                extra: 'shopping this weekend.',
+                answer: 'to go',
+                explanation: 'plan은 to부정사를 목적어로 씁니다. (go -ing: ~하러 가다)'
+            },
+            {
+                id: 17,
+                type: 'choice',
+                prompt: '17. 다음 글에 이어질 내용으로 알맞은 것은?',
+                extra: 'Every day, we produce lots of waste, and the Earth is getting sicker and sicker. Do you want to save the Earth? Then, join the zero-waste challenge, and share your stories.',
+                options: [
+                    '① 분리수거를 제대로 하는 법',
+                    '② 제로 웨이스트 챌린지 사례',
+                    '③ 제로 웨이스트의 의미와 유래',
+                    '④ 제로 웨이스트 챌린지의 효과',
+                    '⑤ 환경 보호 챌린지를 홍보하는 방법'
+                ],
+                answer: 2,
+                explanation: '마지막에 제로 웨이스트 챌린지에 동참해서 그 이야기를 공유하라고 했으므로, 다음에는 그 챌린지 사례가 이어질 것입니다.'
+            },
+            {
+                id: 18,
+                type: 'choice',
+                passageTitle: '[18-19] 다음 글을 읽고, 물음에 답하시오.',
+                passage: 'Challenge 01\nOlivia: My birthday was last Saturday, and my family and I ate out. There were lots of leftovers, but we brought them home. The next day, I made a nice lunch out of them. FYI, you can find great cooking ideas for leftovers on the Internet.',
+                prompt: '18. 윗글의 내용을 바탕으로 빈칸의 제목으로 알맞은 것은?',
+                options: ['① Foods for Health', '② Save the Earth', '③ Eat Less Move More', '④ Reduce Food Waste', '⑤ Leftover Recipes'],
+                answer: 4,
+                explanation: '남은 음식을 집으로 가져와서 다음 날 점심으로 만들었다는 Olivia의 이야기는 \'음식물 쓰레기 줄이기(Reduce Food Waste)\' 사례로 볼 수 있습니다.'
+            },
+            {
+                id: 19,
+                type: 'choice',
+                passageTitle: '[18-19] 다음 글을 읽고, 물음에 답하시오.',
+                passage: 'Challenge 01\nOlivia: My birthday was last Saturday, and my family and I ate out. There were lots of leftovers, but we brought them home. The next day, I made a nice lunch out of them. FYI, you can find great cooking ideas for leftovers on the Internet.',
+                prompt: '19. 윗글의 내용과 일치하는 것은?',
+                options: [
+                    '① Olivia의 생일은 지난주 일요일이었다.',
+                    '② Olivia는 자신의 생일에 가족과 외식했다.',
+                    '③ 외식 후 남은 음식은 그리 많지 않았다.',
+                    '④ Olivia는 그다음 날 남은 음식으로 저녁을 만들었다.',
+                    '⑤ 인터넷에서 남은 음식 보관법을 찾을 수 있다.'
+                ],
+                answer: 2,
+                explanation: 'Olivia는 자신의 생일에 가족과 외식했다고 했습니다. (ate out)'
+            },
+            {
+                id: 20,
+                type: 'choice',
+                passageTitle: '[20-21] 다음 글을 읽고, 물음에 답하시오.',
+                passage: 'Challenge 02 Reuse\nDomingo: My dog tore my bag. ( ① ) I wanted to buy a new one, but I thought again. ( ② ) So, I decided to fix (A) it and reuse (B) it. ( ③ ) I\'m not very good at sewing, and I don\'t think that the bag looks perfect. ( ④ ) I guess it\'s all right. ( ⑤ )',
+                prompt: '20. 윗글의 ①~⑤ 중, 주어진 문장이 들어갈 위치로 알맞은 곳은?',
+                extra: '[주어진 문장]\nI learned that reusing is important for zero-waste living.',
+                options: ['① ①', '② ②', '③ ③', '④ ④', '⑤ ⑤'],
+                answer: 2,
+                explanation: '주어진 문장은 \'나는 재사용하는 것이 제로 웨이스트 생활에 중요하다고 배웠다\'는 의미로, 새 가방을 사고 싶었지만 다시 생각했다는 내용 다음인 ②에 오는 것이 알맞습니다.'
+            },
+            {
+                id: 21,
+                type: 'text',
+                passageTitle: '[20-21] 다음 글을 읽고, 물음에 답하시오.',
+                passage: 'Challenge 02 Reuse\nDomingo: My dog tore my bag. ( ① ) I wanted to buy a new one, but I thought again. ( ② ) So, I decided to fix (A) it and reuse (B) it. ( ③ ) I\'m not very good at sewing, and I don\'t think that the bag looks perfect. ( ④ ) I guess it\'s all right. ( ⑤ )',
+                prompt: '21. 윗글의 밑줄 친 (A)와 (B)가 공통으로 가리키는 것을 찾아 2단어로 쓰시오.',
+                answer: 'my bag',
+                explanation: '가방을 고치고 재사용하기로 결심했다고 하였으므로 (A)와 (B)가 가리키는 대상은 my bag입니다.'
+            },
+            {
+                id: 22,
+                type: 'text',
+                passageTitle: '[22-23] 다음 글을 읽고, 물음에 답하시오.',
+                passage: 'Challenge 03 Say No to Single-Use Plastic\nEmma: I often use food delivery services, but today, (A) I didn\'t. Instead, I walked to my favorite restaurant with a reusable container and picked up the food. I heard (B) ______ plastic never goes away completely. I didn\'t use any single-use plastic today. I felt good!',
+                prompt: '22. 윗글의 밑줄 친 (A) 뒤에 생략된 말을 쓰시오.',
+                answer: 'use food delivery services',
+                explanation: '흔히 음식 배달 서비스를 이용하지만, 오늘은 (음식 배달 서비스를 이용하지) 않았다는 뜻입니다.'
+            },
+            {
+                id: 23,
+                type: 'text',
+                passageTitle: '[22-23] 다음 글을 읽고, 물음에 답하시오.',
+                passage: 'Challenge 03 Say No to Single-Use Plastic\nEmma: I often use food delivery services, but today, (A) I didn\'t. Instead, I walked to my favorite restaurant with a reusable container and picked up the food. I heard (B) ______ plastic never goes away completely. I didn\'t use any single-use plastic today. I felt good!',
+                prompt: '23. 윗글의 빈칸 (B)에 들어갈 말을 한 단어로 쓰시오.',
+                answer: 'that',
+                explanation: 'heard의 목적어가 되는 명사절을 이끄는 접속사 that이 알맞습니다.'
+            },
+            {
+                id: 24,
+                type: 'choice',
+                passageTitle: '[24-25] 다음 글을 읽고, 물음에 답하시오.',
+                passage: 'Challenge 04 Recycle\nMinsu: Yesterday, I took some plastic and glass bottles to a recycling machine near my house. ① I put them into the machine one by one, ② and I got some points in return. ③ What can I do with those points? Well, I can use them like money. ④ Points are more useful than money. ⑤ Don\'t you think that\'s cool?',
+                prompt: '24. 윗글의 밑줄 친 ①~⑤ 중, 글의 흐름상 어색한 것은?',
+                options: ['① ①', '② ②', '③ ③', '④ ④', '⑤ ⑤'],
+                answer: 4,
+                explanation: '플라스틱병과 유리병을 재활용 기계에 넣고 받은 포인트를 돈처럼 사용할 수 있다고 한 다음, \'포인트가 돈보다 더 유용하다.(④)\'라는 문장은 글의 흐름상 어색합니다.'
+            },
+            {
+                id: 25,
+                type: 'text',
+                passageTitle: '[24-25] 다음 글을 읽고, 물음에 답하시오.',
+                passage: 'Challenge 04 Recycle\nMinsu: Yesterday, I took some plastic and glass bottles to a recycling machine near my house. ① I put them into the machine one by one, ② and I got some points in return. ③ What can I do with those points? Well, I can use them like money. ④ Points are more useful than money. ⑤ Don\'t you think that\'s cool?',
+                prompt: '25. 윗글의 내용에 맞게 다음 질문에 완전한 문장으로 답하시오.\n\nQ: What did Minsu put into a recycling machine?\nA: ______',
+                answer: 'He put some plastic and glass bottles into the machine.',
+                aliases: [
+                    'he put some plastic and glass bottles into the machine.',
+                    'he put some plastic and glass bottles into the machine',
+                    'he put plastic and glass bottles into the machine.',
+                    'he put plastic and glass bottles into the machine',
+                    'minsu put some plastic and glass bottles into the machine.',
+                    'minsu put plastic and glass bottles into the machine.'
+                ],
+                explanation: '민수는 재활용 기계에 플라스틱병과 유리병을 넣었습니다. (He put some plastic and glass bottles into the machine.)'
+            }
+        ];
+
+        // State variables
+        let currentIndex = 0;
+        let attemptsCount = 0; // 0: no attempt yet, 1: 1st attempt made (wrong), 2: resolved
+        let userResponses = new Array(questions.length).fill(null);
+        let isSoundOn = true;
+        let isSubmitting = false;
+
+        // Web Audio API Sound Effects Synthesizer
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function playSound(type) {
+            if (!isSoundOn) return;
+            try {
+                if (!audioCtx) audioCtx = new AudioContext();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'correct') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.setValueAtTime(659.25, now + 0.1);
+                    osc.frequency.setValueAtTime(783.99, now + 0.2);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                } else if (type === 'retry') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(329.63, now);
+                    osc.frequency.setValueAtTime(261.63, now + 0.15);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(196.00, now);
+                    osc.frequency.setValueAtTime(146.83, now + 0.15);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                }
+            } catch(e) {
+                // Audio not supported or blocked
+            }
+        }
+
+        function toggleSound() {
+            isSoundOn = !isSoundOn;
+            const icon = document.getElementById('soundIcon');
+            if (isSoundOn) {
+                icon.className = 'fa-solid fa-volume-high text-lg text-blue-600';
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark text-lg text-slate-400';
+            }
+        }
+
+        function startQuiz() {
+            document.getElementById('welcomeScreen').classList.add('hidden');
+            document.getElementById('quizScreen').classList.remove('hidden');
+            document.getElementById('headerControls').classList.remove('hidden');
+            loadQuestion(0);
+        }
+
+        function confirmRestart() {
+            if (confirm('처음부터 다시 시작하시겠습니까? 현재 기록이 초기화됩니다.')) {
+                restartQuiz();
+            }
+        }
+
+        function restartQuiz() {
+            currentIndex = 0;
+            attemptsCount = 0;
+            userResponses = new Array(questions.length).fill(null);
+            document.getElementById('summaryScreen').classList.add('hidden');
+            document.getElementById('welcomeScreen').classList.remove('hidden');
+            document.getElementById('headerControls').classList.add('hidden');
+        }
+
+        function loadQuestion(index) {
+            currentIndex = index;
+            const q = questions[index];
+            const prevRecord = userResponses[index];
+            const isCompleted = prevRecord && prevRecord.status;
+
+            // Determine attempt count
+            if (!prevRecord) {
+                attemptsCount = 0;
+            } else if (!prevRecord.status) {
+                attemptsCount = 1;
+            } else {
+                attemptsCount = 2;
+            }
+
+            // Update UI Counters
+            document.getElementById('currentQNum').innerText = index + 1;
+            const progressPct = ((index + 1) / questions.length) * 100;
+            document.getElementById('progressBar').style.width = `${progressPct}%`;
+            updateScoreRate();
+
+            // Passage rendering
+            const passageBox = document.getElementById('passageBox');
+            if (q.passage) {
+                passageBox.classList.remove('hidden');
+                document.getElementById('passageTitle').innerText = q.passageTitle || '[공통 지문]';
+                document.getElementById('passageContent').innerText = q.passage;
+            } else {
+                passageBox.classList.add('hidden');
+            }
+
+            // Question prompt & Extra
+            document.getElementById('questionPrompt').innerText = q.prompt;
+            const extraBox = document.getElementById('questionExtra');
+            if (q.extra) {
+                extraBox.classList.remove('hidden');
+                extraBox.innerHTML = q.extra.replace(/<u>/g, '<u class="decoration-blue-500 decoration-2 font-bold bg-amber-100 px-1 rounded">');
+            } else {
+                extraBox.classList.add('hidden');
+            }
+
+            // Bot Message reset
+            if (isCompleted) {
+                setBotState('neutral', '이 문제의 풀이가 완료되었습니다.');
+            } else if (attemptsCount === 1) {
+                setBotState('thinking', '아쉽네요! 다시 한번 생각해볼까요? 💡 오답을 제외하고 한 번 더 선택해보세요!');
+            } else {
+                setBotState('neutral', '문제를 잘 읽고 정답을 선택해보세요!');
+            }
+            updateAttemptBadge();
+
+            // Render Options or Text Input
+            const optionsContainer = document.getElementById('optionsContainer');
+            const subjectiveContainer = document.getElementById('subjectiveContainer');
+
+            if (q.type === 'choice') {
+                optionsContainer.classList.remove('hidden');
+                subjectiveContainer.classList.add('hidden');
+                renderChoiceOptions(q, prevRecord);
+            } else {
+                optionsContainer.classList.add('hidden');
+                subjectiveContainer.classList.remove('hidden');
+                renderSubjectiveInput(q, prevRecord);
+            }
+
+            // Explanation box state
+            if (isCompleted) {
+                showExplanation(q, prevRecord);
+            } else {
+                document.getElementById('explanationBox').classList.add('hidden');
+            }
+
+            // Navigation buttons update
+            document.getElementById('prevBtn').disabled = (index === 0);
+            const nextBtn = document.getElementById('nextBtn');
+            if (isCompleted) {
+                nextBtn.classList.remove('hidden');
+                nextBtn.querySelector('span').innerText = (index === questions.length - 1) ? '결과 보기' : '다음 문제';
+            } else {
+                nextBtn.classList.add('hidden');
+            }
+        }
+
+        function renderChoiceOptions(q, prevRecord) {
+            const container = document.getElementById('optionsContainer');
+            container.innerHTML = '';
+            const isCompleted = prevRecord && prevRecord.status;
+
+            q.options.forEach((optText, optIdx) => {
+                const choiceNum = optIdx + 1;
+                const btn = document.createElement('button');
+                btn.className = `w-full text-left p-3.5 md:p-4 rounded-xl border-2 transition-all flex items-center justify-between text-sm md:text-base font-medium border-slate-200 bg-white text-slate-800 shadow-sm`;
+                btn.setAttribute('data-choice', choiceNum);
+
+                if (isCompleted) {
+                    btn.classList.add('cursor-default');
+                    if (choiceNum === q.answer) {
+                        btn.className = 'w-full text-left p-3.5 md:p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50 text-emerald-900 font-bold flex items-center justify-between text-sm md:text-base shadow-sm cursor-default';
+                        btn.innerHTML = `<span>${optText}</span> <i class="fa-solid fa-circle-check text-emerald-600 text-lg"></i>`;
+                    } else if (prevRecord.userFirstAns === choiceNum || prevRecord.userSecondAns === choiceNum) {
+                        btn.className = 'w-full text-left p-3.5 md:p-4 rounded-xl border-2 border-rose-300 bg-rose-50 text-rose-800 flex items-center justify-between text-sm md:text-base line-through opacity-75 cursor-default';
+                        btn.innerHTML = `<span>${optText}</span> <i class="fa-solid fa-circle-xmark text-rose-500 text-lg"></i>`;
+                    } else {
+                        btn.innerHTML = `<span>${optText}</span>`;
+                    }
+                } else {
+                    btn.classList.add('hover:border-blue-400', 'hover:bg-blue-50/50', 'active:scale-[0.99]');
+                    if (prevRecord && prevRecord.userFirstAns === choiceNum) {
+                        btn.className = 'w-full text-left p-3.5 md:p-4 rounded-xl border-2 border-amber-400 bg-amber-50 text-amber-900 flex items-center justify-between text-sm md:text-base opacity-75 line-through';
+                        btn.innerHTML = `<span>${optText}</span> <span class="text-xs bg-amber-200 px-2 py-0.5 rounded font-bold">오답 (1회)</span>`;
+                        btn.disabled = true;
+                    } else {
+                        btn.innerHTML = `<span>${optText}</span>`;
+                        btn.onclick = () => handleChoiceSelect(choiceNum);
+                    }
+                }
+
+                container.appendChild(btn);
+            });
+        }
+
+        function renderSubjectiveInput(q, prevRecord) {
+            const textPrefix = document.getElementById('textPrefix');
+            const input = document.getElementById('subjectiveInput');
+            const submitBtn = document.getElementById('submitSubjectiveBtn');
+            const isCompleted = prevRecord && prevRecord.status;
+
+            if (q.textPrefix) {
+                textPrefix.innerText = q.textPrefix;
+                textPrefix.classList.remove('hidden');
+            } else {
+                textPrefix.classList.add('hidden');
+            }
+
+            input.value = '';
+            input.disabled = false;
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('hidden');
+
+            if (isCompleted) {
+                input.value = prevRecord.userSecondAns || prevRecord.userFirstAns || '';
+                input.disabled = true;
+                submitBtn.classList.add('hidden');
+            } else if (prevRecord && prevRecord.userFirstAns) {
+                input.value = prevRecord.userFirstAns;
+            }
+        }
+
+        function handleChoiceSelect(choiceNum) {
+            if (isSubmitting) return;
+            const q = questions[currentIndex];
+            if (userResponses[currentIndex] && Boolean(userResponses[currentIndex].status)) return;
+
+            isSubmitting = true;
+            setTimeout(() => { isSubmitting = false; }, 400);
+
+            if (choiceNum === q.answer) {
+                // Correct answer!
+                playSound('correct');
+                const status = (attemptsCount === 0) ? 'first_correct' : 'second_correct';
+                userResponses[currentIndex] = {
+                    status: status,
+                    userFirstAns: attemptsCount === 0 ? choiceNum : userResponses[currentIndex]?.userFirstAns,
+                    userSecondAns: attemptsCount === 1 ? choiceNum : null
+                };
+
+                setBotState('happy', attemptsCount === 0 ? '정답입니다! 🎉 한 번에 아주 잘 맞혔어요!' : '맞았습니다! 👏');
+                highlightOption(choiceNum, 'correct');
+                finishQuestion(q);
+            } else {
+                // Incorrect answer
+                if (attemptsCount === 0) {
+                    // First wrong attempt -> Give 2nd chance
+                    attemptsCount = 1;
+                    playSound('retry');
+                    userResponses[currentIndex] = { userFirstAns: choiceNum };
+
+                    setBotState('thinking', '아쉽네요! 다시 한번 생각해볼까요? 💡 오답을 제외하고 한 번 더 선택해보세요!');
+                    highlightOption(choiceNum, 'wrong-retry');
+                    updateAttemptBadge();
+                } else {
+                    // Second wrong attempt -> Show explanation and move on
+                    playSound('wrong');
+                    userResponses[currentIndex] = {
+                        status: 'failed',
+                        userFirstAns: userResponses[currentIndex]?.userFirstAns,
+                        userSecondAns: choiceNum
+                    };
+
+                    setBotState('sad', '아쉽지만 두 번의 기회가 끝났습니다. 정답 해설을 확인해 볼까요?');
+                    highlightOption(choiceNum, 'wrong-final');
+                    highlightOption(q.answer, 'correct');
+                    finishQuestion(q);
+                }
+            }
+        }
+
+        function submitSubjectiveAnswer() {
+            if (isSubmitting) return;
+            const q = questions[currentIndex];
+            if (userResponses[currentIndex] && Boolean(userResponses[currentIndex].status)) return;
+
+            const input = document.getElementById('subjectiveInput');
+            const rawVal = input.value.trim();
+
+            if (!rawVal) {
+                alert('답안을 입력해주세요!');
+                return;
+            }
+
+            isSubmitting = true;
+            setTimeout(() => { isSubmitting = false; }, 400);
+
+            const cleanVal = rawVal.toLowerCase().replace(/\s+/g, ' ');
+            const targetAnswer = q.answer.toLowerCase().replace(/\s+/g, ' ');
+            const aliases = (q.aliases || []).map(a => a.toLowerCase().replace(/\s+/g, ' '));
+
+            const isCorrect = (cleanVal === targetAnswer) || aliases.includes(cleanVal);
+
+            if (isCorrect) {
+                playSound('correct');
+                const status = (attemptsCount === 0) ? 'first_correct' : 'second_correct';
+                userResponses[currentIndex] = {
+                    status: status,
+                    userFirstAns: attemptsCount === 0 ? rawVal : userResponses[currentIndex]?.userFirstAns,
+                    userSecondAns: attemptsCount === 1 ? rawVal : null
+                };
+
+                setBotState('happy', attemptsCount === 0 ? '정답입니다! 🎉 완벽한 영문 표현이에요!' : '맞았습니다! 👏');
+                input.disabled = true;
+                document.getElementById('submitSubjectiveBtn').classList.add('hidden');
+                finishQuestion(q);
+            } else {
+                if (attemptsCount === 0) {
+                    attemptsCount = 1;
+                    playSound('retry');
+                    userResponses[currentIndex] = { userFirstAns: rawVal };
+
+                    setBotState('thinking', '틀린 부분이 있어요! 철자나 띄어쓰기를 다시 확인하고 한 번 더 작성해보세요! 💡');
+                    updateAttemptBadge();
+                } else {
+                    playSound('wrong');
+                    userResponses[currentIndex] = {
+                        status: 'failed',
+                        userFirstAns: userResponses[currentIndex]?.userFirstAns,
+                        userSecondAns: rawVal
+                    };
+
+                    setBotState('sad', '아쉽게도 틀렸습니다. 아래의 정확한 정답을 확인해봐요.');
+                    input.disabled = true;
+                    document.getElementById('submitSubjectiveBtn').classList.add('hidden');
+                    finishQuestion(q);
+                }
+            }
+        }
+
+        function handleSubjectiveKeyPress(event) {
+            if (event.key === 'Enter') {
+                submitSubjectiveAnswer();
+            }
+        }
+
+        function highlightOption(choiceNum, type) {
+            const btn = document.querySelector(`button[data-choice="${choiceNum}"]`);
+            if (!btn) return;
+
+            if (type === 'correct') {
+                btn.className = 'w-full text-left p-3.5 md:p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50 text-emerald-900 font-bold flex items-center justify-between text-sm md:text-base shadow-sm animate-pulse';
+                btn.innerHTML = `<span>${btn.innerText}</span> <i class="fa-solid fa-circle-check text-emerald-600 text-lg"></i>`;
+            } else if (type === 'wrong-retry') {
+                btn.className = 'w-full text-left p-3.5 md:p-4 rounded-xl border-2 border-amber-400 bg-amber-50 text-amber-900 flex items-center justify-between text-sm md:text-base opacity-75 line-through animate-shake';
+                btn.innerHTML = `<span>${btn.innerText}</span> <span class="text-xs bg-amber-200 px-2 py-0.5 rounded font-bold">오답 (1회)</span>`;
+                btn.disabled = true;
+            } else if (type === 'wrong-final') {
+                btn.className = 'w-full text-left p-3.5 md:p-4 rounded-xl border-2 border-rose-300 bg-rose-50 text-rose-800 flex items-center justify-between text-sm md:text-base line-through opacity-75';
+                btn.innerHTML = `<span>${btn.innerText}</span> <i class="fa-solid fa-circle-xmark text-rose-500 text-lg"></i>`;
+                btn.disabled = true;
+            }
+        }
+
+        function finishQuestion(q) {
+            attemptsCount = 2; // mark finished
+            showExplanation(q, userResponses[currentIndex]);
+            updateScoreRate();
+
+            // Unlock Next button
+            const nextBtn = document.getElementById('nextBtn');
+            nextBtn.classList.remove('hidden');
+            nextBtn.querySelector('span').innerText = (currentIndex === questions.length - 1) ? '결과 보기' : '다음 문제';
+        }
+
+        function showExplanation(q, record) {
+            const explanationBox = document.getElementById('explanationBox');
+            const correctAnswerText = document.getElementById('correctAnswerText');
+            const explanationText = document.getElementById('explanationText');
+
+            explanationBox.classList.remove('hidden');
+            
+            if (q.type === 'choice') {
+                correctAnswerText.innerText = `정답: ${q.options[q.answer - 1]}`;
+            } else {
+                correctAnswerText.innerText = `정답: ${q.textPrefix || ''}${q.answer}`;
+            }
+
+            explanationText.innerText = q.explanation;
+        }
+
+        function setBotState(mood, message) {
+            const botIcon = document.getElementById('botIcon');
+            const botMessage = document.getElementById('botMessage');
+
+            botMessage.innerText = message;
+
+            if (mood === 'happy') {
+                botIcon.className = 'fa-solid fa-face-smile-beam text-emerald-500 text-2xl';
+            } else if (mood === 'thinking') {
+                botIcon.className = 'fa-solid fa-lightbulb text-amber-500 text-2xl';
+            } else if (mood === 'sad') {
+                botIcon.className = 'fa-solid fa-face-frown text-rose-500 text-2xl';
+            } else {
+                botIcon.className = 'fa-solid fa-robot text-blue-600 text-2xl';
+            }
+        }
+
+        function updateAttemptBadge() {
+            const badge = document.getElementById('attemptBadge');
+            if (attemptsCount === 0) {
+                badge.innerText = '첫 번째 시도';
+                badge.className = 'text-xs px-2 py-0.5 rounded-md font-semibold bg-blue-50 text-blue-600 border border-blue-200';
+            } else if (attemptsCount === 1) {
+                badge.innerText = '두 번째 시도 (기회 1회 남음)';
+                badge.className = 'text-xs px-2 py-0.5 rounded-md font-semibold bg-amber-50 text-amber-700 border border-amber-300 animate-pulse';
+            } else {
+                badge.innerText = '문제 풀이 완료';
+                badge.className = 'text-xs px-2 py-0.5 rounded-md font-semibold bg-slate-100 text-slate-600 border border-slate-200';
+            }
+        }
+
+        function updateScoreRate() {
+            let completedCount = 0;
+            let correctCount = 0;
+
+            userResponses.forEach(r => {
+                if (r && r.status) {
+                    completedCount++;
+                    if (r.status === 'first_correct' || r.status === 'second_correct') {
+                        correctCount++;
+                    }
+                }
+            });
+
+            const rate = completedCount > 0 ? Math.round((correctCount / completedCount) * 100) : 0;
+            document.getElementById('correctRate').innerText = `${rate}% (${correctCount}/${completedCount})`;
+        }
+
+        function nextQuestion() {
+            if (currentIndex < questions.length - 1) {
+                loadQuestion(currentIndex + 1);
+            } else {
+                showSummaryScreen();
+            }
+        }
+
+        function prevQuestion() {
+            if (currentIndex > 0) {
+                loadQuestion(currentIndex - 1);
+            }
+        }
+
+        function showSummaryScreen() {
+            document.getElementById('quizScreen').classList.add('hidden');
+            document.getElementById('summaryScreen').classList.remove('hidden');
+
+            let firstTry = 0;
+            let secondTry = 0;
+            let failed = 0;
+
+            userResponses.forEach(r => {
+                if (r?.status === 'first_correct') firstTry++;
+                else if (r?.status === 'second_correct') secondTry++;
+                else failed++;
+            });
+
+            document.getElementById('scoreFirstTry').innerText = firstTry;
+            document.getElementById('scoreSecondTry').innerText = secondTry;
+            document.getElementById('scoreIncorrect').innerText = failed;
+
+            const reviewList = document.getElementById('reviewList');
+            reviewList.innerHTML = '';
+
+            questions.forEach((q, idx) => {
+                const rec = userResponses[idx];
+                const item = document.createElement('div');
+                item.className = 'p-3 rounded-xl border flex items-center justify-between text-sm cursor-pointer hover:bg-slate-50 transition-colors';
+
+                let badge = '';
+                if (rec?.status === 'first_correct') {
+                    item.classList.add('border-emerald-200', 'bg-emerald-50/40');
+                    badge = '<span class="text-xs px-2 py-1 rounded-md font-bold bg-emerald-100 text-emerald-800"><i class="fa-solid fa-check mr-1"></i>1차 정답</span>';
+                } else if (rec?.status === 'second_correct') {
+                    item.classList.add('border-amber-200', 'bg-amber-50/40');
+                    badge = '<span class="text-xs px-2 py-1 rounded-md font-bold bg-amber-100 text-amber-800"><i class="fa-solid fa-rotate-right mr-1"></i>2차 정답</span>';
+                } else {
+                    item.classList.add('border-rose-200', 'bg-rose-50/40');
+                    badge = '<span class="text-xs px-2 py-1 rounded-md font-bold bg-rose-100 text-rose-800"><i class="fa-solid fa-xmark mr-1"></i>오답</span>';
+                }
+
+                item.innerHTML = `
+                    <div class="flex items-center space-x-3 overflow-hidden">
+                        <span class="font-bold text-slate-500 w-6 flex-shrink-0">${idx + 1}.</span>
+                        <span class="truncate font-medium text-slate-800">${q.prompt.replace(/^\d+\.\s*/, '')}</span>
+                    </div>
+                    <div class="flex-shrink-0 ml-2">${badge}</div>
+                `;
+
+                item.onclick = () => {
+                    document.getElementById('summaryScreen').classList.add('hidden');
+                    document.getElementById('quizScreen').classList.remove('hidden');
+                    loadQuestion(idx);
+                };
+
+                reviewList.appendChild(item);
+            });
+        }
+    </script>
+</body>
+</html>
